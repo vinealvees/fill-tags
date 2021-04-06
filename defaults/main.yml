@@ -1,0 +1,7 @@
+---
+#TagValue defaults file for fill-tags
+
+AWSAccessKey: aws-access-key-here
+AWSSecretAccessKey: aws-secret-access-key-here
+AWSRegion: aws-regeion-here
+ec2instanceid: aws-instance-id-here

@@ -1,0 +1,37 @@
+---
+# tasks file for fill-tags
+
+- name: Getting information about EC2 instances
+  community.aws.ec2_instance_info:
+    instance_ids: "{{ec2instanceid}}"
+  register: ec2_ins_info
+- name: Getting information about EC2 volumes
+  amazon.aws.ec2_vol_info:
+    filters:
+      volume-id: "{{item}}"
+  loop: "{{ ec2_ins_info | json_query('instances[*].block_device_mappings[*].ebs.volume_id') | flatten }}"
+  register: vol_info
+- name: Running EC2 instances backup tags
+  local_action:
+    module: ansible.builtin.copy
+    content: "{{ item.instance_id }}{{ item.tags }}"
+    dest: "fill-tags/files/{{ item.instance_id}}-{{ ansible_date_time.iso8601_basic_short }}.tag"
+  with_items: "{{ ec2_ins_info.instances }}"
+- name: Running EC2 volumes backup tags
+  local_action:
+    module: ansible.builtin.copy
+    content: "{{ vol_info }}"
+    dest: "fill-tags/files/{{ item.instance_id }}-volumes-{{ ansible_date_time.iso8601_basic_short }}.tag"
+  with_items: 
+    - "{{ ec2_ins_info.instances }}"
+- name: Tagging EC2 resources
+  amazon.aws.ec2_tag:
+    region: "{{AWSRegion}}"
+    resource: "{{ item }}"
+    state: present
+    tags:
+      xpto: "insert-yours-tags-here"
+      abc: "insert-yours-tags-here"
+  with_items:
+    - "{{ ec2instanceid }}"
+    - "{{ ec2_ins_info | json_query('instances[*].block_device_mappings[*].ebs.volume_id') | flatten }}"
